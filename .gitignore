@@ -1,0 +1,58 @@
+# Dependencies
+/node_modules
+/vendor
+
+# Build files
+/build/*
+!/build/.gitkeep
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Editor directories and files
+.idea
+.vscode
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# WordPress specific
+wp-config.php
+wp-content/advanced-cache.php
+wp-content/backup-db/
+wp-content/backups/
+wp-content/blogs.dir/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/uploads/
+wp-content/mu-plugins/
+wp-content/wp-cache-config.php
+
+# Packages
+*.zip
+*.tar.gz
+*.tgz
+
+# Composer
+composer.phar
+
+# Testing
+/phpunit.xml
+/tests/coverage
+.phpunit.result.cache
+
+# Development tools
+/phpcs.xml
+/phpcs.xml.dist
+/phpmd.xml
+/phpstan.neon
+/psalm.xml

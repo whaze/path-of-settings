@@ -1,0 +1,23 @@
+{
+    "name": "whodunit/path-of-settings",
+    "description": "A modern options page builder for WordPress with React and object-oriented architecture",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "PathOfSettings\\": "src/"
+        }
+    },
+    "scripts": {
+        "phpcs": "phpcs --standard=WordPress src/",
+        "phpcbf": "phpcbf --standard=WordPress src/"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
