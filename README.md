@@ -5,6 +5,7 @@ A modern, developer-friendly WordPress options page builder with React UI and ob
 [![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D%207.4-8892BF.svg)](https://php.net/)
 [![WordPress](https://img.shields.io/badge/WordPress-%3E%3D%205.8-21759B.svg)](https://wordpress.org/)
+[![Packagist](https://img.shields.io/packagist/v/whaze/path-of-settings.svg)](https://packagist.org/packages/whaze/path-of-settings)
 
 ## Overview
 
@@ -12,13 +13,15 @@ PathOfSettings is a comprehensive package for creating custom settings pages in 
 
 ### Key Features
 
-- **Modern Architecture**: Clean OOP design with interfaces, registries, and services
-- **React-Powered UI**: Built with WordPress Gutenberg components for native look and feel  
-- **Flexible Integration**: Works in both plugins and themes via Composer
-- **Type Safety**: Full PHP 7.4+ type hints and comprehensive PHPDoc
-- **REST API**: Custom endpoints for secure settings management
-- **Field Types**: Text, textarea, select, checkbox with extensible architecture
-- **Developer Experience**: Simple procedural API with powerful underlying architecture
+- **🚀 Ultra-Simple API**: One-line initialization, no configuration required
+- **⚡ Plug & Play**: Built assets included, no build step needed
+- **🎨 Modern UI**: React-powered interface using WordPress Gutenberg components
+- **🏗️ Clean Architecture**: Object-oriented design with interfaces and services
+- **🔌 Flexible Integration**: Works in both plugins and themes via Composer
+- **🛡️ Type Safety**: Full PHP 7.4+ type hints and comprehensive PHPDoc
+- **🌐 REST API**: Custom endpoints for secure settings management
+- **📦 Extensible**: Support for custom field types
+- **🌍 i18n Ready**: Full internationalization support
 
 ---
 
@@ -30,9 +33,11 @@ PathOfSettings is a comprehensive package for creating custom settings pages in 
 composer require whaze/path-of-settings
 ```
 
+**That's it!** Built assets are included in the package, no additional build step required.
+
 ### Manual Installation
 
-1. Download the latest release
+1. Download the latest release from [GitHub](https://github.com/whaze/path-of-settings/releases)
 2. Extract to your plugin or theme directory
 3. Include the autoloader in your code
 
@@ -40,30 +45,22 @@ composer require whaze/path-of-settings
 
 ## Quick Start
 
-### Plugin Integration
+### 🚀 Ultra-Simple Integration
 
 ```php
 <?php
-// Include Composer autoloader
+// 1. Include Composer autoloader
 require_once __DIR__ . '/vendor/autoload.php';
 
-// Initialize PathOfSettings
-add_action('plugins_loaded', function() {
-    \PathOfSettings\PathOfSettings::getInstance()->init([
-        'version' => '1.0.0',
-        'path' => plugin_dir_path(__FILE__),
-        'url' => plugin_dir_url(__FILE__),
-        'file' => __FILE__,
-    ]);
-});
+// 2. Initialize PathOfSettings (one line!)
+\PathOfSettings\PathOfSettings::getInstance()->init();
 
-// Register settings pages
+// 3. Register your settings
 add_action('pos_register_pages', function() {
     // Create a settings page
     pos_register_page('my-settings', [
         'title' => __('My Settings', 'textdomain'),
         'menu_title' => __('Settings', 'textdomain'),
-        'capability' => 'manage_options',
     ]);
     
     // Add fields
@@ -84,34 +81,80 @@ add_action('pos_register_pages', function() {
 });
 ```
 
-### Theme Integration
+**That's it! 🎉** Your settings page is ready with a modern React interface.
+
+### 🔌 Plugin Integration
+
+```php
+<?php
+/**
+ * Plugin Name: My Awesome Plugin
+ */
+
+// Include Composer autoloader
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Initialize on plugin load
+add_action('plugins_loaded', function() {
+    \PathOfSettings\PathOfSettings::getInstance()->init();
+});
+
+// Register plugin settings
+add_action('pos_register_pages', function() {
+    pos_register_page('my-plugin-settings', [
+        'title' => __('My Plugin Settings', 'my-plugin'),
+        'capability' => 'manage_options',
+    ]);
+    
+    pos_add_field('my-plugin-settings', 'text', 'api_key', [
+        'label' => __('API Key', 'my-plugin'),
+        'required' => true,
+    ]);
+    
+    pos_add_field('my-plugin-settings', 'checkbox', 'enable_feature', [
+        'label' => __('Enable Advanced Feature', 'my-plugin'),
+        'default' => false,
+    ]);
+});
+
+// Use settings in your plugin
+function my_plugin_get_api_key() {
+    return pos_get_setting('my-plugin-settings', 'api_key', '');
+}
+```
+
+### 🎨 Theme Integration
 
 ```php
 <?php
 // In your theme's functions.php
 require_once get_template_directory() . '/vendor/autoload.php';
 
-add_action('after_setup_theme', function() {
-    \PathOfSettings\PathOfSettings::getInstance()->init([
-        'version' => wp_get_theme()->get('Version') ?: '1.0.0',
-        'path' => get_template_directory() . '/',
-        'url' => get_template_directory_uri() . '/',
-        'file' => get_template_directory() . '/style.css',
-    ]);
-});
+// Initialize for theme
+\PathOfSettings\PathOfSettings::getInstance()->init();
 
 // Register theme options
 add_action('pos_register_pages', function() {
     pos_register_page('theme-options', [
-        'title' => __('Theme Options', 'textdomain'),
+        'title' => __('Theme Options', 'my-theme'),
         'capability' => 'edit_theme_options',
     ]);
     
     pos_add_field('theme-options', 'text', 'primary_color', [
-        'label' => __('Primary Color', 'textdomain'),
+        'label' => __('Primary Color', 'my-theme'),
         'placeholder' => '#007cba',
     ]);
+    
+    pos_add_field('theme-options', 'textarea', 'custom_css', [
+        'label' => __('Custom CSS', 'my-theme'),
+        'rows' => 8,
+    ]);
 });
+
+// Use in your theme
+function get_theme_primary_color() {
+    return pos_get_setting('theme-options', 'primary_color', '#007cba');
+}
 ```
 
 ---
@@ -128,10 +171,19 @@ Register a new settings page.
 - `$id` (string): Unique page identifier
 - `$args` (array): Page configuration
   - `title` (string): Page title
-  - `menu_title` (string): Menu title (optional)
+  - `menu_title` (string): Menu title (optional, defaults to title)
   - `capability` (string): Required capability (default: `manage_options`)
 
 **Returns:** `PageInterface` object
+
+**Example:**
+```php
+pos_register_page('my-settings', [
+    'title' => 'My Settings Page',
+    'menu_title' => 'Settings',
+    'capability' => 'manage_options',
+]);
+```
 
 #### `pos_add_field($pageId, $type, $id, $args)`
 
@@ -162,6 +214,12 @@ Retrieve a setting value.
 
 **Returns:** Mixed setting value
 
+**Example:**
+```php
+$api_key = pos_get_setting('my-settings', 'api_key', '');
+$is_enabled = pos_get_setting('my-settings', 'enable_feature', false);
+```
+
 #### `pos_get_settings($pageId)`
 
 Retrieve all settings for a page.
@@ -189,6 +247,7 @@ pos_add_field('page-id', 'textarea', 'field-id', [
     'label' => 'Long Text',
     'description' => 'Enter longer content',
     'rows' => 5,
+    'placeholder' => 'Enter your content here...',
 ]);
 ```
 
@@ -196,9 +255,11 @@ pos_add_field('page-id', 'textarea', 'field-id', [
 ```php
 pos_add_field('page-id', 'select', 'field-id', [
     'label' => 'Choose Option',
+    'description' => 'Select an option from the dropdown',
     'options' => [
         'option1' => 'Option 1',
         'option2' => 'Option 2',
+        'option3' => 'Option 3',
     ],
     'default' => 'option1',
 ]);
@@ -208,7 +269,7 @@ pos_add_field('page-id', 'select', 'field-id', [
 ```php
 pos_add_field('page-id', 'checkbox', 'field-id', [
     'label' => 'Enable Feature',
-    'description' => 'Check to enable',
+    'description' => 'Check to enable this feature',
     'default' => false,
 ]);
 ```
@@ -238,6 +299,19 @@ add_action('init', function() {
 });
 ```
 
+### Advanced Initialization
+
+For advanced use cases, you can pass configuration options:
+
+```php
+\PathOfSettings\PathOfSettings::getInstance()->init([
+    'version' => '2.1.0',  // Custom version
+    'path' => plugin_dir_path(__FILE__),  // For custom textdomain loading
+    'url' => plugin_dir_url(__FILE__),
+    'file' => __FILE__,
+]);
+```
+
 ### Hooks and Filters
 
 #### Actions
@@ -250,7 +324,17 @@ add_action('init', function() {
 ```php
 add_filter('pos_before_save_settings', function($settings, $pageId) {
     // Modify settings before saving
+    if ($pageId === 'my-settings') {
+        $settings['api_key'] = strtoupper($settings['api_key']);
+    }
     return $settings;
+}, 10, 2);
+
+add_action('pos_after_save_settings', function($settings, $pageId) {
+    // Do something after settings are saved
+    if ($pageId === 'my-settings') {
+        // Clear cache, send notification, etc.
+    }
 }, 10, 2);
 ```
 
@@ -261,6 +345,27 @@ PathOfSettings automatically creates REST endpoints:
 - `GET /wp-json/pos/v1/settings/{page-id}` - Retrieve settings
 - `POST /wp-json/pos/v1/settings/{page-id}` - Update settings
 
+**Example API usage:**
+```javascript
+// Get settings
+fetch('/wp-json/pos/v1/settings/my-settings')
+    .then(response => response.json())
+    .then(settings => console.log(settings));
+
+// Update settings
+fetch('/wp-json/pos/v1/settings/my-settings', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-WP-Nonce': wpApiSettings.nonce
+    },
+    body: JSON.stringify({
+        api_key: 'new-api-key',
+        enable_feature: true
+    })
+});
+```
+
 ---
 
 ## Examples
@@ -270,29 +375,127 @@ Complete working examples are available in the `/examples` directory:
 - [`examples/plugin-example.php`](examples/plugin-example.php) - Full plugin implementation
 - [`examples/theme-example.php`](examples/theme-example.php) - Complete theme integration
 
+### Real-World Example: Contact Form Plugin
+
+```php
+<?php
+/**
+ * Plugin Name: Simple Contact Form
+ */
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Initialize PathOfSettings
+add_action('plugins_loaded', function() {
+    \PathOfSettings\PathOfSettings::getInstance()->init();
+});
+
+// Register contact form settings
+add_action('pos_register_pages', function() {
+    pos_register_page('contact-form-settings', [
+        'title' => __('Contact Form Settings', 'simple-contact-form'),
+        'menu_title' => __('Contact Form', 'simple-contact-form'),
+    ]);
+    
+    // Email settings
+    pos_add_field('contact-form-settings', 'text', 'recipient_email', [
+        'label' => __('Recipient Email', 'simple-contact-form'),
+        'description' => __('Email address to receive form submissions', 'simple-contact-form'),
+        'required' => true,
+        'placeholder' => 'admin@example.com',
+    ]);
+    
+    pos_add_field('contact-form-settings', 'text', 'subject_prefix', [
+        'label' => __('Email Subject Prefix', 'simple-contact-form'),
+        'default' => '[Contact Form]',
+        'placeholder' => '[Contact Form]',
+    ]);
+    
+    // Form settings
+    pos_add_field('contact-form-settings', 'checkbox', 'require_phone', [
+        'label' => __('Require Phone Number', 'simple-contact-form'),
+        'description' => __('Make phone number field required', 'simple-contact-form'),
+        'default' => false,
+    ]);
+    
+    pos_add_field('contact-form-settings', 'select', 'form_style', [
+        'label' => __('Form Style', 'simple-contact-form'),
+        'options' => [
+            'default' => __('Default', 'simple-contact-form'),
+            'modern' => __('Modern', 'simple-contact-form'),
+            'minimal' => __('Minimal', 'simple-contact-form'),
+        ],
+        'default' => 'default',
+    ]);
+});
+
+// Use settings in your plugin
+function scf_get_recipient_email() {
+    return pos_get_setting('contact-form-settings', 'recipient_email', get_admin_email());
+}
+
+function scf_is_phone_required() {
+    return pos_get_setting('contact-form-settings', 'require_phone', false);
+}
+```
+
 ---
 
 ## Requirements
 
 - **PHP**: 7.4 or higher
 - **WordPress**: 5.8 or higher
-- **Node.js**: 14+ (for building assets)
+- **Browser**: Modern browser with JavaScript enabled (for admin interface)
+
+---
+
+## Installation Troubleshooting
+
+### Common Issues
+
+#### Assets Not Loading
+If the React interface doesn't appear:
+
+1. Check browser console for JavaScript errors
+2. Verify `build/` directory exists in the package
+3. Enable `WP_DEBUG` to see detailed error messages
+
+#### Permission Issues
+If you can't access settings pages:
+
+1. Verify user has required capability (`manage_options` by default)
+2. Check if pages are registered correctly
+3. Ensure `pos_register_pages` action is firing
+
+#### Composer Issues
+If Composer installation fails:
+
+1. Update Composer: `composer self-update`
+2. Clear cache: `composer clear-cache`
+3. Try without cache: `composer install --no-cache`
 
 ---
 
 ## Development
 
-### Building Assets
+### For Contributors
 
 ```bash
-# Install dependencies
+# Clone repository
+git clone https://github.com/whaze/path-of-settings.git
+cd path-of-settings
+
+# Install PHP dependencies
+composer install
+
+# Install Node.js dependencies
 npm install
 
-# Build for production
-npm run build
-
-# Development mode with watch
+# Build assets for development
 npm run start
+
+# Build assets for production
+npm run build
 ```
 
 ### Code Standards
@@ -303,6 +506,22 @@ composer run phpcs
 
 # Fix PHP code standards
 composer run phpcbf
+
+# Check JavaScript standards
+npm run lint:js
+
+# Fix JavaScript standards
+npm run lint:js:fix
+```
+
+### Testing
+
+```bash
+# Run JavaScript tests
+npm run test:unit
+
+# Format code
+npm run format
 ```
 
 ---
@@ -321,6 +540,25 @@ composer run phpcbf
 - Add PHPDoc for all public methods
 - Include unit tests for new features
 - Update documentation for API changes
+- Test in both plugin and theme contexts
+
+---
+
+## Changelog
+
+### [1.0.1] - 2025-05-27
+- **Added**: Auto-detection of package assets path
+- **Added**: Simplified initialization API
+- **Added**: Better error handling and debugging
+- **Improved**: Documentation with more examples
+- **Fixed**: Asset loading in theme contexts
+
+### [1.0.0] - 2025-05-27
+- Initial release
+- React-powered admin interface
+- Support for text, textarea, select, and checkbox fields
+- REST API endpoints
+- Composer package support
 
 ---
 
@@ -333,7 +571,7 @@ This project is licensed under the GPL-2.0-or-later License. See the [LICENSE](L
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/whaze/path-of-settings/issues)
-- **Documentation**: [Wiki](https://github.com/whaze/path-of-settings/wiki)
+- **Documentation**: [GitHub Wiki](https://github.com/whaze/path-of-settings/wiki)
 - **Discussions**: [GitHub Discussions](https://github.com/whaze/path-of-settings/discussions)
 
 ---
@@ -343,5 +581,30 @@ This project is licensed under the GPL-2.0-or-later License. See the [LICENSE](L
 Developed by [Jerome Buquet (Whaze)](https://whodunit.fr)
 
 Built with ❤️ for the WordPress community.
-```
 
+### Special Thanks
+
+- WordPress Core Team for the excellent Gutenberg components
+- The Composer team for making PHP package management awesome
+- All contributors and users of this package
+
+---
+
+## Roadmap
+
+### Planned Features
+- 🎨 Additional field types (color picker, media uploader, date picker)
+- 🔗 Field groups and conditional logic
+- 📊 Import/export functionality
+- 🌐 Multi-site network support
+- 🎯 Advanced validation rules
+- 🔌 WordPress Customizer integration
+- 📱 Better mobile responsive design
+
+### Performance Improvements
+- ⚡ Field lazy loading
+- 💾 Advanced settings caching
+- 📦 Asset optimization
+- 🗄️ Database optimization
+
+Want to contribute to any of these features? Check out our [contributing guide](#contributing)!
