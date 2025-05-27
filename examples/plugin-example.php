@@ -96,14 +96,7 @@ class PathOfSettingsExamplePlugin {
 	 * @since 1.0.0
 	 */
 	private function initPathOfSettings(): void {
-		\PathOfSettings\PathOfSettings::getInstance()->init(
-			[
-				'version' => '1.0.0',
-				'path'    => plugin_dir_path( __FILE__ ),
-				'url'     => plugin_dir_url( __FILE__ ),
-				'file'    => __FILE__,
-			]
-		);
+		\PathOfSettings\PathOfSettings::getInstance()->init();
 	}
 
 	/**

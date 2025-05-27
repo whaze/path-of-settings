@@ -100,14 +100,7 @@ class PathOfSettingsThemeExample {
 	 * @since 1.0.0
 	 */
 	private function initPathOfSettings(): void {
-		\PathOfSettings\PathOfSettings::getInstance()->init(
-			[
-				'version' => wp_get_theme()->get( 'Version' ) ?: '1.0.0',
-				'path'    => get_template_directory() . '/',
-				'url'     => get_template_directory_uri() . '/',
-				'file'    => get_template_directory() . '/style.css',
-			]
-		);
+		\PathOfSettings\PathOfSettings::getInstance()->init();
 	}
 
 	/**
