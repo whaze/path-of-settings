@@ -3,8 +3,8 @@
 /vendor
 
 # Build files
-/build/*
-!/build/.gitkeep
+#/build/*
+#!/build/.gitkeep
 
 # Environment files
 .env
@@ -56,3 +56,6 @@ composer.phar
 /phpmd.xml
 /phpstan.neon
 /psalm.xml
+
+# Ne PAS ignorer build/ pour la distribution
+# build/
