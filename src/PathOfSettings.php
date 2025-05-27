@@ -170,12 +170,32 @@ class PathOfSettings {
 		}
 
 		$assetFile = POS_PATH . 'build/index.asset.php';
+		$jsFile    = POS_PATH . 'build/index.js';
 
+		// Check if build files exist
 		if ( ! file_exists( $assetFile ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'PathOfSettings: Asset file not found at ' . $assetFile . '. Please run "npm run build".' );
+			}
+			return;
+		}
+
+		if ( ! file_exists( $jsFile ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'PathOfSettings: JavaScript file not found at ' . $jsFile . '. Please run "npm run build".' );
+			}
 			return;
 		}
 
 		$assets = include $assetFile;
+
+		// Validate asset file structure
+		if ( ! is_array( $assets ) || ! isset( $assets['dependencies'] ) || ! isset( $assets['version'] ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'PathOfSettings: Invalid asset file structure. Please rebuild assets with "npm run build".' );
+			}
+			return;
+		}
 
 		wp_register_script(
 			'pos-admin',
