@@ -64,7 +64,11 @@ class PathOfSettings {
 	 * Can be called multiple times safely - will only initialize once.
 	 *
 	 * @since 1.0.0
-	 * @param array $config Package configuration options
+	 * @param array $config Package configuration options (optional)
+	 *                     - version: Package version (optional)
+	 *                     - path: User project path (optional, used for textdomain)
+	 *                     - url: User project URL (optional)
+	 *                     - file: User project main file (optional)
 	 */
 	public function init( array $config = [] ): void {
 		if ( self::$initialized ) {
@@ -84,10 +88,12 @@ class PathOfSettings {
 	 * @param array $config Configuration array
 	 */
 	private function defineConstants( array $config ): void {
+		// Version - can be auto-detected from composer.json
 		if ( ! defined( 'POS_VERSION' ) ) {
-			define( 'POS_VERSION', $config['version'] ?? '1.0.0' );
+			define( 'POS_VERSION', $config['version'] ?? $this->getPackageVersion() );
 		}
 
+		// These constants are now optional
 		if ( ! defined( 'POS_PATH' ) ) {
 			define( 'POS_PATH', $config['path'] ?? '' );
 		}
@@ -99,6 +105,26 @@ class PathOfSettings {
 		if ( ! defined( 'POS_FILE' ) ) {
 			define( 'POS_FILE', $config['file'] ?? '' );
 		}
+	}
+
+	/**
+	 * Auto-detect package version from composer.json.
+	 *
+	 * @since 1.0.0
+	 * @return string Package version
+	 */
+	private function getPackageVersion(): string {
+		$packagePath = $this->getPackagePath();
+		if ( $packagePath ) {
+			$composerFile = $packagePath . 'composer.json';
+			if ( file_exists( $composerFile ) ) {
+				$composer = json_decode( file_get_contents( $composerFile ), true );
+				if ( isset( $composer['version'] ) ) {
+					return $composer['version'];
+				}
+			}
+		}
+		return '1.0.0';
 	}
 
 	/**
@@ -119,6 +145,21 @@ class PathOfSettings {
 	 * @since 1.0.0
 	 */
 	public function loadTextdomain(): void {
+		// Use package path for translations
+		$packagePath = $this->getPackagePath();
+		if ( $packagePath ) {
+			$languagesPath = $packagePath . 'languages';
+			if ( is_dir( $languagesPath ) ) {
+				load_plugin_textdomain(
+					'path-of-settings',
+					false,
+					basename( $packagePath ) . '/languages'
+				);
+				return;
+			}
+		}
+
+		// Fallback to old system if defined
 		if ( defined( 'POS_PATH' ) && POS_PATH ) {
 			load_plugin_textdomain(
 				'path-of-settings',
@@ -165,41 +206,47 @@ class PathOfSettings {
 	 * @since 1.0.0
 	 */
 	private function enqueueAssets(): void {
-		if ( ! defined( 'POS_PATH' ) || ! defined( 'POS_URL' ) || ! POS_PATH || ! POS_URL ) {
+		// Auto-detect package path using reflection
+		$packagePath = $this->getPackagePath();
+		$packageUrl  = $this->getPackageUrl( $packagePath );
+
+		if ( ! $packagePath || ! $packageUrl ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'PathOfSettings: Unable to detect package path or URL.' );
+			}
 			return;
 		}
 
-		$assetFile = POS_PATH . 'build/index.asset.php';
-		$jsFile    = POS_PATH . 'build/index.js';
+		$assetFile = $packagePath . 'build/index.asset.php';
+		$jsFile    = $packagePath . 'build/index.js';
 
 		// Check if build files exist
 		if ( ! file_exists( $assetFile ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'PathOfSettings: Asset file not found at ' . $assetFile . '. Please run "npm run build".' );
+				error_log( 'PathOfSettings: Asset file not found at ' . $assetFile );
 			}
 			return;
 		}
 
 		if ( ! file_exists( $jsFile ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'PathOfSettings: JavaScript file not found at ' . $jsFile . '. Please run "npm run build".' );
+				error_log( 'PathOfSettings: JavaScript file not found at ' . $jsFile );
 			}
 			return;
 		}
 
 		$assets = include $assetFile;
 
-		// Validate asset file structure
 		if ( ! is_array( $assets ) || ! isset( $assets['dependencies'] ) || ! isset( $assets['version'] ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'PathOfSettings: Invalid asset file structure. Please rebuild assets with "npm run build".' );
+				error_log( 'PathOfSettings: Invalid asset file structure.' );
 			}
 			return;
 		}
 
 		wp_register_script(
 			'pos-admin',
-			POS_URL . 'build/index.js',
+			$packageUrl . 'build/index.js',
 			$assets['dependencies'],
 			$assets['version'],
 			true
@@ -217,6 +264,76 @@ class PathOfSettings {
 				'currentPage' => $this->getCurrentPage(),
 			]
 		);
+	}
+
+	/**
+	 * Get the absolute path to the PathOfSettings package directory.
+	 *
+	 * Uses reflection to detect the actual location of the package,
+	 * regardless of how it was installed (Composer, manual, etc.).
+	 *
+	 * @since 1.0.0
+	 * @return string|null Package absolute path or null if detection fails
+	 */
+	private function getPackagePath(): ?string {
+		try {
+			$reflection = new \ReflectionClass( $this );
+			$classFile  = $reflection->getFileName();
+
+			if ( ! $classFile ) {
+				return null;
+			}
+
+			// Go up from src/PathOfSettings.php to package root
+			return dirname( dirname( $classFile ) ) . '/';
+		} catch ( \Exception $e ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'PathOfSettings: Failed to detect package path - ' . $e->getMessage() );
+			}
+			return null;
+		}
+	}
+
+	/**
+	 * Convert package absolute path to WordPress URL.
+	 *
+	 * @since 1.0.0
+	 * @param string $packagePath Absolute path to package directory
+	 * @return string|null Package URL or null if conversion fails
+	 */
+	private function getPackageUrl( string $packagePath ): ?string {
+		if ( ! $packagePath ) {
+			return null;
+		}
+
+		$packagePath = wp_normalize_path( $packagePath );
+
+		// Try ABSPATH first (most common)
+		$abspath = wp_normalize_path( ABSPATH );
+		if ( strpos( $packagePath, $abspath ) === 0 ) {
+			$relativePath = substr( $packagePath, strlen( $abspath ) );
+			return home_url( $relativePath );
+		}
+
+		// Try WP_CONTENT_DIR (for packages in wp-content)
+		$wpContentDir = wp_normalize_path( WP_CONTENT_DIR );
+		if ( strpos( $packagePath, $wpContentDir ) === 0 ) {
+			$relativePath = substr( $packagePath, strlen( $wpContentDir ) );
+			return content_url( $relativePath );
+		}
+
+		// Try wp-content relative path (fallback)
+		if ( strpos( $packagePath, '/wp-content/' ) !== false ) {
+			$wpContentPos = strpos( $packagePath, '/wp-content/' );
+			$relativePath = substr( $packagePath, $wpContentPos + strlen( '/wp-content' ) );
+			return content_url( $relativePath );
+		}
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'PathOfSettings: Unable to convert package path to URL - ' . $packagePath );
+		}
+
+		return null;
 	}
 
 	/**
