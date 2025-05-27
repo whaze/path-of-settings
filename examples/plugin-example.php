@@ -1,69 +1,101 @@
 <?php
-
 /**
  * Plugin Name: PathOfSettings Example Plugin
  * Plugin URI: https://github.com/whaze/path-of-settings
- * Description: Exemple d'utilisation du package PathOfSettings dans un plugin WordPress
+ * Description: Example implementation of PathOfSettings package in a WordPress plugin
  * Version: 1.0.0
  * Author: Jerome Buquet
  * Requires PHP: 7.4
- * Text Domain: pos-example-plugin.
+ * Text Domain: pos-example-plugin
  */
 
-// Empêcher l'accès direct
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Classe principale du plugin d'exemple.
+ * Example plugin demonstrating PathOfSettings usage.
+ *
+ * Shows how to integrate PathOfSettings package into a WordPress plugin,
+ * including proper initialization, error handling, and settings registration.
+ *
+ * @package PathOfSettings\Examples
+ * @since 1.0.0
  */
 class PathOfSettingsExamplePlugin {
 
 	/**
-	 * Instance singleton.
+	 * Singleton instance.
+	 *
+	 * @since 1.0.0
+	 * @var self|null
 	 */
 	private static $instance = null;
 
 	/**
 	 * Get singleton instance.
+	 *
+	 * @since 1.0.0
+	 * @return self
 	 */
-	public static function getInstance() {
+	public static function getInstance(): self {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
-
 		return self::$instance;
 	}
 
 	/**
-	 * Constructeur.
+	 * Initialize the example plugin.
+	 *
+	 * @since 1.0.0
 	 */
 	private function __construct() {
 		add_action( 'plugins_loaded', [ $this, 'init' ] );
 	}
 
 	/**
-	 * Initialiser le plugin.
+	 * Initialize plugin components and dependencies.
+	 *
+	 * @since 1.0.0
 	 */
-	public function init() {
-		// Charger l'autoloader Composer
-		if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
-			require_once __DIR__ . '/vendor/autoload.php';
-		} else {
-			add_action( 'admin_notices', [ $this, 'composerNotice' ] );
-
+	public function init(): void {
+		if ( ! $this->loadDependencies() ) {
 			return;
 		}
 
-		// Vérifier que la classe PathOfSettings existe
+		$this->initPathOfSettings();
+		add_action( 'pos_register_pages', [ $this, 'registerSettingsPages' ] );
+	}
+
+	/**
+	 * Load required dependencies and check for PathOfSettings package.
+	 *
+	 * @since 1.0.0
+	 * @return bool True if dependencies loaded successfully
+	 */
+	private function loadDependencies(): bool {
+		if ( ! file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
+			add_action( 'admin_notices', [ $this, 'showComposerNotice' ] );
+			return false;
+		}
+
+		require_once __DIR__ . '/vendor/autoload.php';
+
 		if ( ! class_exists( '\PathOfSettings\PathOfSettings' ) ) {
-			add_action( 'admin_notices', [ $this, 'packageNotice' ] );
-
-			return;
+			add_action( 'admin_notices', [ $this, 'showPackageNotice' ] );
+			return false;
 		}
 
-		// Initialiser PathOfSettings
+		return true;
+	}
+
+	/**
+	 * Initialize PathOfSettings package.
+	 *
+	 * @since 1.0.0
+	 */
+	private function initPathOfSettings(): void {
 		\PathOfSettings\PathOfSettings::getInstance()->init(
 			[
 				'version' => '1.0.0',
@@ -72,115 +104,134 @@ class PathOfSettingsExamplePlugin {
 				'file'    => __FILE__,
 			]
 		);
-
-		// Enregistrer nos pages d'options
-		add_action( 'pos_register_pages', [ $this, 'registerPages' ] );
 	}
 
 	/**
-	 * Notice si Composer n'est pas installé.
+	 * Display notice when Composer dependencies are missing.
+	 *
+	 * @since 1.0.0
 	 */
-	public function composerNotice() {
+	public function showComposerNotice(): void {
 		echo '<div class="notice notice-error"><p>';
-		echo __( 'PathOfSettings Example Plugin: Veuillez exécuter "composer install" dans le répertoire du plugin.', 'pos-example-plugin' );
+		echo esc_html__( 'PathOfSettings Example Plugin: Please run "composer install" in the plugin directory.', 'pos-example-plugin' );
 		echo '</p></div>';
 	}
 
 	/**
-	 * Notice si le package n'est pas installé.
+	 * Display notice when PathOfSettings package is missing.
+	 *
+	 * @since 1.0.0
 	 */
-	public function packageNotice() {
+	public function showPackageNotice(): void {
 		echo '<div class="notice notice-error"><p>';
-		echo __( 'PathOfSettings Example Plugin: Le package whaze/path-of-settings n\'est pas installé. Exécutez "composer require whaze/path-of-settings".', 'pos-example-plugin' );
+		echo esc_html__( 'PathOfSettings Example Plugin: The whaze/path-of-settings package is not installed. Run "composer require whaze/path-of-settings".', 'pos-example-plugin' );
 		echo '</p></div>';
 	}
 
 	/**
-	 * Enregistrer les pages d'options.
+	 * Register example settings pages and fields.
+	 *
+	 * Demonstrates various field types and configuration options.
+	 *
+	 * @since 1.0.0
 	 */
-	public function registerPages() {
-		// Page principale
-		$mainPage = pos_register_page(
-			'example-settings',
+	public function registerSettingsPages(): void {
+		$this->registerGeneralSettings();
+		$this->registerAdvancedSettings();
+	}
+
+	/**
+	 * Register general settings page.
+	 *
+	 * @since 1.0.0
+	 */
+	private function registerGeneralSettings(): void {
+		pos_register_page(
+			'example-general',
 			[
-				'title'      => __( 'Paramètres d\'exemple', 'pos-example-plugin' ),
-				'menu_title' => __( 'Exemple POS', 'pos-example-plugin' ),
+				'title'      => __( 'General Settings', 'pos-example-plugin' ),
+				'menu_title' => __( 'Example Settings', 'pos-example-plugin' ),
 				'capability' => 'manage_options',
 			]
 		);
 
-		// Champs de la page principale
 		pos_add_field(
-			'example-settings',
+			'example-general',
 			'text',
 			'site_name',
 			[
-				'label'       => __( 'Nom du site', 'pos-example-plugin' ),
-				'description' => __( 'Entrez le nom de votre site', 'pos-example-plugin' ),
+				'label'       => __( 'Site Name', 'pos-example-plugin' ),
+				'description' => __( 'Enter your site name for branding purposes', 'pos-example-plugin' ),
 				'default'     => get_bloginfo( 'name' ),
 				'required'    => true,
-				'placeholder' => __( 'Mon super site', 'pos-example-plugin' ),
+				'placeholder' => __( 'My Awesome Site', 'pos-example-plugin' ),
 			]
 		);
 
 		pos_add_field(
-			'example-settings',
+			'example-general',
 			'textarea',
 			'site_description',
 			[
-				'label'       => __( 'Description du site', 'pos-example-plugin' ),
-				'description' => __( 'Décrivez votre site en quelques mots', 'pos-example-plugin' ),
+				'label'       => __( 'Site Description', 'pos-example-plugin' ),
+				'description' => __( 'Provide a brief description of your website', 'pos-example-plugin' ),
 				'default'     => get_bloginfo( 'description' ),
-				'placeholder' => __( 'Un site WordPress fantastique...', 'pos-example-plugin' ),
+				'placeholder' => __( 'A fantastic WordPress website...', 'pos-example-plugin' ),
 				'rows'        => 4,
 			]
 		);
 
 		pos_add_field(
-			'example-settings',
+			'example-general',
 			'select',
-			'color_scheme',
+			'theme_style',
 			[
-				'label'       => __( 'Schéma de couleurs', 'pos-example-plugin' ),
-				'description' => __( 'Choisissez le schéma de couleurs de votre site', 'pos-example-plugin' ),
-				'default'     => 'light',
+				'label'       => __( 'Theme Style', 'pos-example-plugin' ),
+				'description' => __( 'Choose the visual style for your site', 'pos-example-plugin' ),
+				'default'     => 'modern',
 				'options'     => [
-					'light'  => __( 'Clair', 'pos-example-plugin' ),
-					'dark'   => __( 'Sombre', 'pos-example-plugin' ),
-					'auto'   => __( 'Automatique', 'pos-example-plugin' ),
-					'custom' => __( 'Personnalisé', 'pos-example-plugin' ),
+					'classic' => __( 'Classic', 'pos-example-plugin' ),
+					'modern'  => __( 'Modern', 'pos-example-plugin' ),
+					'minimal' => __( 'Minimal', 'pos-example-plugin' ),
+					'bold'    => __( 'Bold', 'pos-example-plugin' ),
 				],
 			]
 		);
 
 		pos_add_field(
-			'example-settings',
+			'example-general',
 			'checkbox',
 			'enable_features',
 			[
-				'label'       => __( 'Activer les fonctionnalités avancées', 'pos-example-plugin' ),
-				'description' => __( 'Cochez cette case pour activer les fonctionnalités avancées', 'pos-example-plugin' ),
+				'label'       => __( 'Enable Advanced Features', 'pos-example-plugin' ),
+				'description' => __( 'Check to enable advanced functionality', 'pos-example-plugin' ),
 				'default'     => false,
 			]
 		);
 
 		pos_add_field(
-			'example-settings',
+			'example-general',
 			'text',
 			'api_key',
 			[
-				'label'       => __( 'Clé API', 'pos-example-plugin' ),
-				'description' => __( 'Entrez votre clé API pour les services externes', 'pos-example-plugin' ),
+				'label'       => __( 'API Key', 'pos-example-plugin' ),
+				'description' => __( 'Enter your API key for external services', 'pos-example-plugin' ),
 				'placeholder' => __( 'sk-...', 'pos-example-plugin' ),
 			]
 		);
+	}
 
-		// Page secondaire pour montrer les possibilités
-		$advancedPage = pos_register_page(
+	/**
+	 * Register advanced settings page.
+	 *
+	 * @since 1.0.0
+	 */
+	private function registerAdvancedSettings(): void {
+		pos_register_page(
 			'example-advanced',
 			[
-				'title'      => __( 'Paramètres avancés', 'pos-example-plugin' ),
-				'menu_title' => __( 'Avancé', 'pos-example-plugin' ),
+				'title'      => __( 'Advanced Settings', 'pos-example-plugin' ),
+				'menu_title' => __( 'Advanced', 'pos-example-plugin' ),
 				'capability' => 'manage_options',
 			]
 		);
@@ -190,14 +241,14 @@ class PathOfSettingsExamplePlugin {
 			'select',
 			'cache_duration',
 			[
-				'label'       => __( 'Durée du cache', 'pos-example-plugin' ),
-				'description' => __( 'Choisissez la durée de mise en cache', 'pos-example-plugin' ),
+				'label'       => __( 'Cache Duration', 'pos-example-plugin' ),
+				'description' => __( 'Select how long to cache data', 'pos-example-plugin' ),
 				'default'     => '3600',
 				'options'     => [
 					'300'   => __( '5 minutes', 'pos-example-plugin' ),
 					'1800'  => __( '30 minutes', 'pos-example-plugin' ),
-					'3600'  => __( '1 heure', 'pos-example-plugin' ),
-					'86400' => __( '24 heures', 'pos-example-plugin' ),
+					'3600'  => __( '1 hour', 'pos-example-plugin' ),
+					'86400' => __( '24 hours', 'pos-example-plugin' ),
 				],
 			]
 		);
@@ -207,66 +258,91 @@ class PathOfSettingsExamplePlugin {
 			'checkbox',
 			'debug_mode',
 			[
-				'label'       => __( 'Mode debug', 'pos-example-plugin' ),
-				'description' => __( 'Activer le mode debug (attention en production)', 'pos-example-plugin' ),
+				'label'       => __( 'Debug Mode', 'pos-example-plugin' ),
+				'description' => __( 'Enable debug mode (not recommended for production)', 'pos-example-plugin' ),
 				'default'     => false,
 			]
 		);
 	}
 }
 
-// Initialiser le plugin
 PathOfSettingsExamplePlugin::getInstance();
 
 /**
- * Fonctions utilitaires pour récupérer les settings.
+ * Utility functions for retrieving example settings.
  */
 
 /**
- * Obtenir le nom du site configuré.
+ * Get the configured site name.
+ *
+ * @since 1.0.0
+ * @param string $default Default value if setting not found
+ * @return string Site name
  */
-function pos_example_get_site_name( $default = '' ) {
-	return pos_get_setting( 'example-settings', 'site_name', $default );
+function pos_example_get_site_name( string $default = '' ): string {
+	return pos_get_setting( 'example-general', 'site_name', $default );
 }
 
 /**
- * Obtenir la description du site configurée.
+ * Get the configured site description.
+ *
+ * @since 1.0.0
+ * @param string $default Default value if setting not found
+ * @return string Site description
  */
-function pos_example_get_site_description( $default = '' ) {
-	return pos_get_setting( 'example-settings', 'site_description', $default );
+function pos_example_get_site_description( string $default = '' ): string {
+	return pos_get_setting( 'example-general', 'site_description', $default );
 }
 
 /**
- * Obtenir le schéma de couleurs.
+ * Get the selected theme style.
+ *
+ * @since 1.0.0
+ * @param string $default Default value if setting not found
+ * @return string Theme style
  */
-function pos_example_get_color_scheme( $default = 'light' ) {
-	return pos_get_setting( 'example-settings', 'color_scheme', $default );
+function pos_example_get_theme_style( string $default = 'modern' ): string {
+	return pos_get_setting( 'example-general', 'theme_style', $default );
 }
 
 /**
- * Vérifier si les fonctionnalités avancées sont activées.
+ * Check if advanced features are enabled.
+ *
+ * @since 1.0.0
+ * @return bool True if advanced features are enabled
  */
-function pos_example_is_features_enabled() {
-	return (bool) pos_get_setting( 'example-settings', 'enable_features', false );
+function pos_example_is_features_enabled(): bool {
+	return (bool) pos_get_setting( 'example-general', 'enable_features', false );
 }
 
 /**
- * Obtenir la clé API.
+ * Get the API key.
+ *
+ * @since 1.0.0
+ * @param string $default Default value if setting not found
+ * @return string API key
  */
-function pos_example_get_api_key( $default = '' ) {
-	return pos_get_setting( 'example-settings', 'api_key', $default );
+function pos_example_get_api_key( string $default = '' ): string {
+	return pos_get_setting( 'example-general', 'api_key', $default );
 }
 
 /**
- * Obtenir la durée du cache.
+ * Get the cache duration in seconds.
+ *
+ * @since 1.0.0
+ * @param int $default Default value if setting not found
+ * @return int Cache duration in seconds
  */
-function pos_example_get_cache_duration( $default = 3600 ) {
+function pos_example_get_cache_duration( int $default = 3600 ): int {
 	return (int) pos_get_setting( 'example-advanced', 'cache_duration', $default );
 }
 
 /**
- * Vérifier si le mode debug est activé.
+ * Check if debug mode is enabled.
+ *
+ * @since 1.0.0
+ * @return bool True if debug mode is enabled
  */
-function pos_example_is_debug_enabled() {
+function pos_example_is_debug_enabled(): bool {
 	return (bool) pos_get_setting( 'example-advanced', 'debug_mode', false );
 }

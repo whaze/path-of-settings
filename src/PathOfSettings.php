@@ -7,24 +7,38 @@ use PathOfSettings\Core\Registries\PagesRegistry;
 use PathOfSettings\RestApi\SettingsController;
 
 /**
- * Classe principale du package PathOfSettings.
+ * Main PathOfSettings package class.
+ *
+ * Entry point for the PathOfSettings package. Handles initialization,
+ * WordPress integration, and coordinates all package components.
+ * Uses singleton pattern to ensure single instance across the application.
+ *
+ * @package PathOfSettings
+ * @since 1.0.0
  */
 class PathOfSettings {
 
 	/**
-	 * Instance singleton.
+	 * Singleton instance.
+	 *
+	 * @since 1.0.0
+	 * @var self|null
 	 */
 	private static $instance = null;
 
 	/**
-	 * État d'initialisation.
+	 * Package initialization status.
+	 *
+	 * @since 1.0.0
+	 * @var bool
 	 */
 	private static $initialized = false;
 
 	/**
-	 * Get singleton instance.
+	 * Get the singleton instance.
 	 *
-	 * @return self
+	 * @since 1.0.0
+	 * @return self The package instance
 	 */
 	public static function getInstance(): self {
 		if ( null === self::$instance ) {
@@ -35,16 +49,22 @@ class PathOfSettings {
 	}
 
 	/**
-	 * Constructeur privé pour singleton.
+	 * Private constructor to enforce singleton pattern.
+	 *
+	 * @since 1.0.0
 	 */
 	private function __construct() {
-		// Construction privée pour singleton
+		// Prevent direct instantiation
 	}
 
 	/**
-	 * Initialiser le package.
+	 * Initialize the PathOfSettings package.
 	 *
-	 * @param array $config Configuration du package
+	 * Sets up constants, registers WordPress hooks, and initializes core components.
+	 * Can be called multiple times safely - will only initialize once.
+	 *
+	 * @since 1.0.0
+	 * @param array $config Package configuration options
 	 */
 	public function init( array $config = [] ): void {
 		if ( self::$initialized ) {
@@ -58,9 +78,10 @@ class PathOfSettings {
 	}
 
 	/**
-	 * Définir les constantes.
+	 * Define package constants from configuration.
 	 *
-	 * @param array $config
+	 * @since 1.0.0
+	 * @param array $config Configuration array
 	 */
 	private function defineConstants( array $config ): void {
 		if ( ! defined( 'POS_VERSION' ) ) {
@@ -81,7 +102,9 @@ class PathOfSettings {
 	}
 
 	/**
-	 * Initialiser les hooks WordPress.
+	 * Initialize WordPress hooks and actions.
+	 *
+	 * @since 1.0.0
 	 */
 	private function initHooks(): void {
 		add_action( 'plugins_loaded', [ $this, 'loadTextdomain' ] );
@@ -91,7 +114,9 @@ class PathOfSettings {
 	}
 
 	/**
-	 * Charger les traductions.
+	 * Load translation files for internationalization.
+	 *
+	 * @since 1.0.0
 	 */
 	public function loadTextdomain(): void {
 		if ( defined( 'POS_PATH' ) && POS_PATH ) {
@@ -104,24 +129,29 @@ class PathOfSettings {
 	}
 
 	/**
-	 * Initialiser les registres.
+	 * Initialize core registries and trigger page registration.
+	 *
+	 * @since 1.0.0
 	 */
 	public function initRegistries(): void {
-		// Initialiser les registres
 		PagesRegistry::getInstance();
 		FieldsRegistry::getInstance();
 
-		// Déclencher l'action pour l'enregistrement des pages
+		/**
+		 * Action hook for registering settings pages.
+		 *
+		 * @since 1.0.0
+		 */
 		do_action( 'pos_register_pages' );
 	}
 
 	/**
-	 * Enregistrer les assets.
+	 * Register and enqueue admin assets when needed.
 	 *
-	 * @param string $hook Current admin page
+	 * @since 1.0.0
+	 * @param string $hook Current WordPress admin page hook
 	 */
 	public function registerAssets( string $hook ): void {
-		// Charger seulement sur nos pages d'options
 		if ( ! $this->isOptionsPage( $hook ) ) {
 			return;
 		}
@@ -130,7 +160,9 @@ class PathOfSettings {
 	}
 
 	/**
-	 * Charger les assets JavaScript et CSS.
+	 * Enqueue JavaScript and CSS assets for the admin interface.
+	 *
+	 * @since 1.0.0
 	 */
 	private function enqueueAssets(): void {
 		if ( ! defined( 'POS_PATH' ) || ! defined( 'POS_URL' ) || ! POS_PATH || ! POS_URL ) {
@@ -145,7 +177,6 @@ class PathOfSettings {
 
 		$assets = include $assetFile;
 
-		// Enregistrer et charger le script
 		wp_register_script(
 			'pos-admin',
 			POS_URL . 'build/index.js',
@@ -157,7 +188,6 @@ class PathOfSettings {
 		wp_enqueue_script( 'pos-admin' );
 		wp_enqueue_style( 'wp-components' );
 
-		// Passer les données au script
 		wp_localize_script(
 			'pos-admin',
 			'posData',
@@ -170,34 +200,55 @@ class PathOfSettings {
 	}
 
 	/**
-	 * Vérifier si la page actuelle est une de nos pages d'options.
+	 * Check if the current admin page belongs to PathOfSettings.
 	 *
-	 * @param string $hook Current admin page
-	 *
-	 * @return bool
+	 * @since 1.0.0
+	 * @param string $hook WordPress admin page hook
+	 * @return bool True if this is a PathOfSettings page
 	 */
 	private function isOptionsPage( string $hook ): bool {
 		$registry = PagesRegistry::getInstance();
-
 		return $registry->isOptionsPage( $hook );
 	}
 
 	/**
-	 * Obtenir les données de la page actuelle.
+	 * Get current page data for JavaScript consumption.
 	 *
-	 * @return array|null
+	 * @since 1.0.0
+	 * @return array|null Current page data or null if not applicable
 	 */
 	private function getCurrentPage(): ?array {
 		$registry = PagesRegistry::getInstance();
-
 		return $registry->getCurrentPage();
 	}
 
 	/**
-	 * Enregistrer les routes REST API.
+	 * Register REST API routes for settings management.
+	 *
+	 * @since 1.0.0
 	 */
 	public function registerRestRoutes(): void {
 		$controller = new SettingsController();
 		$controller->register_routes();
+	}
+
+	/**
+	 * Check if the package has been initialized.
+	 *
+	 * @since 1.0.0
+	 * @return bool True if package is initialized
+	 */
+	public static function isInitialized(): bool {
+		return self::$initialized;
+	}
+
+	/**
+	 * Get package version.
+	 *
+	 * @since 1.0.0
+	 * @return string Package version
+	 */
+	public static function getVersion(): string {
+		return defined( 'POS_VERSION' ) ? POS_VERSION : '1.0.0';
 	}
 }

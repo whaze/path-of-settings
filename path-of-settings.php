@@ -11,19 +11,30 @@
  * Text Domain: path-of-settings
  * Domain Path: /languages
  * Requires PHP: 7.4
+ * Requires at least: 5.8
+ * Tested up to: 6.4
+ * Network: false
  */
 
-// Empêcher l'accès direct
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Charger l'autoloader Composer
+/**
+ * Initialize PathOfSettings as a WordPress plugin.
+ *
+ * This file serves as the main plugin bootstrap when PathOfSettings
+ * is used as a standalone WordPress plugin rather than a Composer package.
+ *
+ * @since 1.0.0
+ */
+
+// Load Composer autoloader if available
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 	require_once __DIR__ . '/vendor/autoload.php';
 }
 
-// Initialiser le package via la nouvelle classe d'entrée
+// Initialize PathOfSettings package
 add_action(
 	'plugins_loaded',
 	function () {
@@ -36,11 +47,20 @@ add_action(
 					'file'    => __FILE__,
 				]
 			);
+		} else {
+			add_action(
+				'admin_notices',
+				function () {
+					echo '<div class="notice notice-error"><p>';
+					echo esc_html__( 'PathOfSettings: Package classes not found. Please run "composer install" or check your installation.', 'path-of-settings' );
+					echo '</p></div>';
+				}
+			);
 		}
 	}
 );
 
-// Les helpers restent chargés pour la compatibilité API procédurale
+// Load helper functions for backward compatibility
 if ( file_exists( __DIR__ . '/helpers.php' ) ) {
 	require_once __DIR__ . '/helpers.php';
 }
