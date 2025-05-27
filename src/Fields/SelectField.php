@@ -1,116 +1,140 @@
 <?php
+
 namespace PathOfSettings\Fields;
 
 use PathOfSettings\Core\Contracts\FieldInterface;
 
+/**
+ * Select dropdown field implementation.
+ *
+ * Provides a dropdown selection field with configurable options,
+ * validation to ensure selected values are valid, and support for required fields.
+ *
+ * @package PathOfSettings\Fields
+ * @since 1.0.0
+ */
 class SelectField implements FieldInterface {
-    /**
-     * Field ID
-     */
-    private string $id;
-    
-    /**
-     * Field configuration
-     */
-    private array $config;
-    
-    /**
-     * Field value
-     */
-    private $value = '';
-    
-    /**
-     * Constructor
-     * 
-     * @param string $id
-     * @param array $config
-     */
-    public function __construct(string $id, array $config = []) {
-        $this->id = $id;
-        $this->config = wp_parse_args($config, [
-            'label' => '',
-            'description' => '',
-            'default' => '',
-            'options' => [],
-            'required' => false,
-        ]);
-        
-        $this->value = $this->config['default'];
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function getId(): string {
-        return $this->id;
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function getType(): string {
-        return 'select';
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function getConfig(): array {
-        return $this->config;
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function getValue() {
-        return $this->value;
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function setValue($value): self {
-        $this->value = $value;
-        return $this;
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function validate($value) {
-        if ($this->config['required'] && empty($value)) {
-            return new \WP_Error(
-                'required_field',
-                sprintf(__('The field "%s" is required.', 'path-of-settings'), $this->config['label'])
-            );
-        }
-        
-        if (!empty($value) && !array_key_exists($value, $this->config['options'])) {
-            return new \WP_Error(
-                'invalid_option',
-                sprintf(__('Invalid option for field "%s".', 'path-of-settings'), $this->config['label'])
-            );
-        }
-        
-        return true;
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function sanitize($value) {
-        return sanitize_text_field($value);
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function toArray(): array {
-        return [
-            'id' => $this->id,
-            'type' => $this->getType(),
-            'config' => $this->config,
-            'value' => $this->value,
-        ];
-    }
+
+	/**
+	 * Unique field identifier.
+	 *
+	 * @since 1.0.0
+	 * @var string
+	 */
+	private string $id;
+
+	/**
+	 * Field configuration options.
+	 *
+	 * @since 1.0.0
+	 * @var array
+	 */
+	private array $config;
+
+	/**
+	 * Current field value.
+	 *
+	 * @since 1.0.0
+	 * @var string
+	 */
+	private $value = '';
+
+	/**
+	 * Create a new select field.
+	 *
+	 * @since 1.0.0
+	 * @param string $id Unique field identifier
+	 * @param array  $config Field configuration options including 'options' array
+	 */
+	public function __construct( string $id, array $config = [] ) {
+		$this->id     = $id;
+		$this->config = wp_parse_args(
+			$config,
+			[
+				'label'       => '',
+				'description' => '',
+				'default'     => '',
+				'options'     => [],
+				'required'    => false,
+			]
+		);
+
+		$this->value = $this->config['default'];
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getId(): string {
+		return $this->id;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getType(): string {
+		return 'select';
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getConfig(): array {
+		return $this->config;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getValue() {
+		return $this->value;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function setValue( $value ): self {
+		$this->value = (string) $value;
+		return $this;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function validate( $value ) {
+		if ( $this->config['required'] && empty( $value ) ) {
+			return new \WP_Error(
+				'required_field',
+				sprintf( __( 'The field "%s" is required.', 'path-of-settings' ), $this->config['label'] )
+			);
+		}
+
+		if ( ! empty( $value ) && ! array_key_exists( $value, $this->config['options'] ) ) {
+			return new \WP_Error(
+				'invalid_option',
+				sprintf( __( 'Invalid option for field "%s".', 'path-of-settings' ), $this->config['label'] )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function sanitize( $value ) {
+		return sanitize_text_field( $value );
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function toArray(): array {
+		return [
+			'id'     => $this->id,
+			'type'   => $this->getType(),
+			'config' => $this->config,
+			'value'  => $this->value,
+		];
+	}
 }

@@ -11,154 +11,56 @@
  * Text Domain: path-of-settings
  * Domain Path: /languages
  * Requires PHP: 7.4
+ * Requires at least: 5.8
+ * Tested up to: 6.4
+ * Network: false
  */
 
-namespace PathOfSettings;
-
-// Exit if accessed directly
-if (!defined('ABSPATH')) {
-    exit;
-}
-
-// Define constants
-define('POS_VERSION', '1.0.0');
-define('POS_FILE', __FILE__);
-define('POS_PATH', plugin_dir_path(__FILE__));
-define('POS_URL', plugin_dir_url(__FILE__));
-
-// Composer autoloader
-if (file_exists(POS_PATH . 'vendor/autoload.php')) {
-    require_once POS_PATH . 'vendor/autoload.php';
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
- * Main plugin class.
+ * Initialize PathOfSettings as a WordPress plugin.
+ *
+ * This file serves as the main plugin bootstrap when PathOfSettings
+ * is used as a standalone WordPress plugin rather than a Composer package.
+ *
+ * @since 1.0.0
  */
-class PathOfSettings {
-    /**
-     * Singleton instance
-     */
-    private static $instance = null;
 
-    /**
-     * Get singleton instance
-     * 
-     * @return PathOfSettings
-     */
-    public static function getInstance(): self {
-        if (null === self::$instance) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-
-    /**
-     * Private constructor to prevent direct instantiation
-     */
-    private function __construct() {
-        $this->initHooks();
-    }
-
-    /**
-     * Initialize hooks
-     */
-    private function initHooks(): void {
-        add_action('plugins_loaded', [$this, 'loadTextdomain']);
-        add_action('init', [$this, 'init']);
-        add_action('admin_enqueue_scripts', [$this, 'registerAssets']);
-        add_action('rest_api_init', [$this, 'registerRestRoutes']);
-    }
-
-    /**
-     * Load plugin textdomain
-     */
-    public function loadTextdomain(): void {
-        load_plugin_textdomain(
-            'path-of-settings',
-            false,
-            basename(dirname(POS_FILE)) . '/languages'
-        );
-    }
-
-    /**
-     * Initialize plugin
-     */
-    public function init(): void {
-        // Initialize registries
-        Core\Registries\PagesRegistry::getInstance();
-        Core\Registries\FieldsRegistry::getInstance();
-        
-        // Register settings pages
-        do_action('pos_register_pages');
-    }
-
-    /**
-     * Register assets
-     * 
-     * @param string $hook Current admin page
-     */
-    public function registerAssets(string $hook): void {
-        // Only load on our settings pages
-        if (!$this->isOptionsPage($hook)) {
-            return;
-        }
-        
-        $assetFile = include(POS_PATH . 'build/index.asset.php');
-        
-        // Register and enqueue scripts
-        wp_register_script(
-            'pos-admin',
-            POS_URL . 'build/index.js',
-            $assetFile['dependencies'],
-            $assetFile['version'],
-            true
-        );
-        
-        wp_enqueue_script('pos-admin');
-        wp_enqueue_style('wp-components');
-        
-        // Pass data to script
-        wp_localize_script('pos-admin', 'posData', [
-            'restUrl' => esc_url_raw(rest_url('pos/v1')),
-            'nonce' => wp_create_nonce('wp_rest'),
-            'currentPage' => $this->getCurrentPage(),
-        ]);
-    }
-    
-    /**
-     * Check if current page is one of our options pages
-     * 
-     * @param string $hook Current admin page
-     * @return bool
-     */
-    private function isOptionsPage(string $hook): bool {
-        $registry = Core\Registries\PagesRegistry::getInstance();
-        return $registry->isOptionsPage($hook);
-    }
-    
-    /**
-     * Get current page data
-     * 
-     * @return array|null
-     */
-    private function getCurrentPage(): ?array {
-        $registry = Core\Registries\PagesRegistry::getInstance();
-        return $registry->getCurrentPage();
-    }
-    
-    /**
-     * Register REST API routes
-     */
-    public function registerRestRoutes(): void {
-        $controller = new RestApi\SettingsController();
-        $controller->register_routes();
-    }
+// Load Composer autoloader if available
+if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
+	require_once __DIR__ . '/vendor/autoload.php';
 }
 
-// Initialize the plugin
-add_action('plugins_loaded', function() {
-    PathOfSettings::getInstance();
-});
+// Initialize PathOfSettings package
+add_action(
+	'plugins_loaded',
+	function () {
+		if ( class_exists( '\PathOfSettings\PathOfSettings' ) ) {
+			\PathOfSettings\PathOfSettings::getInstance()->init(
+				[
+					'version' => '1.0.0',
+					'path'    => plugin_dir_path( __FILE__ ),
+					'url'     => plugin_dir_url( __FILE__ ),
+					'file'    => __FILE__,
+				]
+			);
+		} else {
+			add_action(
+				'admin_notices',
+				function () {
+					echo '<div class="notice notice-error"><p>';
+					echo esc_html__( 'PathOfSettings: Package classes not found. Please run "composer install" or check your installation.', 'path-of-settings' );
+					echo '</p></div>';
+				}
+			);
+		}
+	}
+);
 
-// Load helper functions
-require_once POS_PATH . 'helpers.php';
+// Load helper functions for backward compatibility
+if ( file_exists( __DIR__ . '/helpers.php' ) ) {
+	require_once __DIR__ . '/helpers.php';
+}
