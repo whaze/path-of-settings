@@ -119,10 +119,31 @@ class SettingsController extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error Response object or error
 	 */
 	public function get_items( $request ) {
-		$pageId   = $request['page'];
+		$pageId = $request['page'];
 		$settings = $this->settingsManager->getSettings( $pageId );
-
-		return rest_ensure_response( $settings );
+		
+		// Récupérer la page pour avoir les données des champs
+		$pagesRegistry = PagesRegistry::getInstance();
+		$page = $pagesRegistry->getPage( $pageId );
+		
+		$response = [
+			'settings' => $settings,
+			'fields' => []
+		];
+		
+		if ( $page ) {
+			foreach ( $page->getFields() as $field ) {
+				$fieldId = $field->getId();
+				// Définir la valeur du champ depuis les settings
+				if ( isset( $settings[ $fieldId ] ) ) {
+					$field->setValue( $settings[ $fieldId ] );
+				}
+				
+				$response['fields'][ $fieldId ] = $field->toArray();
+			}
+		}
+		
+		return rest_ensure_response( $response );
 	}
 
 	/**

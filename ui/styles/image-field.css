@@ -1,0 +1,127 @@
+/* Styles pour le champ image */
+.pos-field-image {
+    margin-bottom: 20px;
+}
+
+.pos-image-field-content {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: border-color 0.3s ease;
+}
+
+.pos-image-field-content:hover {
+    border-color: #007cba;
+}
+
+/* Aperçu de l'image */
+.pos-image-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.pos-image-container {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-width: 300px;
+}
+
+.pos-preview-image {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+.pos-image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    color: white;
+    padding: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.pos-image-container:hover .pos-image-overlay {
+    opacity: 1;
+}
+
+.pos-image-info {
+    font-size: 12px;
+}
+
+.pos-image-dimensions {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+}
+
+/* Actions de l'image */
+.pos-image-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Placeholder sans image */
+.pos-image-placeholder {
+    padding: 40px 20px;
+}
+
+.pos-no-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.pos-upload-icon {
+    font-size: 48px;
+    opacity: 0.5;
+}
+
+.pos-upload-help {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+.pos-uploading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.pos-uploading p {
+    color: #666;
+    margin: 0;
+}
+
+/* États d'erreur */
+.pos-field-image.has-error .pos-image-field-content {
+    border-color: #d94f4f;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .pos-image-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .pos-image-actions .components-button {
+        width: 100%;
+    }
+}

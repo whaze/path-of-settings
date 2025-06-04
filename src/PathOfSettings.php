@@ -251,9 +251,19 @@ class PathOfSettings {
 			$assets['version'],
 			true
 		);
+	
+		wp_register_style(
+			'pos-admin',
+			$packageUrl . 'build/index.css',
+			[],
+			$assets['version']
+		);
 
 		wp_enqueue_script( 'pos-admin' );
 		wp_enqueue_style( 'wp-components' );
+
+		// Enqueue media library for image fields
+    	wp_enqueue_media();
 
 		wp_localize_script(
 			'pos-admin',

@@ -31,7 +31,23 @@ class SettingsManager {
 	 */
 	public function getSettings( string $pageId ): array {
 		$optionName = $this->getOptionName( $pageId );
-		return get_option( $optionName, [] );
+		$settings = get_option( $optionName, [] );
+		
+		// Récupérer la page pour avoir accès aux champs
+		$pagesRegistry = \PathOfSettings\Core\Registries\PagesRegistry::getInstance();
+		$page = $pagesRegistry->getPage( $pageId );
+		
+		if ( $page ) {
+			// Pour chaque champ, définir la valeur depuis les settings
+			foreach ( $page->getFields() as $field ) {
+				$fieldId = $field->getId();
+				if ( isset( $settings[ $fieldId ] ) ) {
+					$field->setValue( $settings[ $fieldId ] );
+				}
+			}
+		}
+		
+		return $settings;
 	}
 
 	/**

@@ -16,6 +16,8 @@ import TextField from './components/fields/TextField';
 import SelectField from './components/fields/SelectField';
 import CheckboxField from './components/fields/CheckboxField';
 import TextareaField from './components/fields/TextareaField';
+import ImageField from './components/fields/ImageField';
+import './styles/image-field.css';
 
 // Field component map
 const fieldComponents = {
@@ -23,6 +25,7 @@ const fieldComponents = {
     select: SelectField,
     checkbox: CheckboxField,
     textarea: TextareaField,
+    image: ImageField,
 };
 
 // Main app component
@@ -58,7 +61,23 @@ const App = () => {
                 method: 'GET',
             });
             
-            setSettings(response);
+            // La réponse contient maintenant settings et fields
+            setSettings(response.settings || response); // Fallback pour compatibilité
+            
+            // Mettre à jour les champs de la page avec les données d'image
+            if (response.fields) {
+                // Mettre à jour currentPage.fields avec les données des champs
+                currentPage.fields = currentPage.fields.map(field => {
+                    if (response.fields[field.id]) {
+                        return {
+                            ...field,
+                            ...response.fields[field.id]
+                        };
+                    }
+                    return field;
+                });
+            }
+            
             setErrors({});
             setNotice(null);
         } catch (error) {
@@ -153,15 +172,23 @@ const App = () => {
                 ? settings[field.id] 
                 : field.config.default;
             
+            // Préparer les props pour le composant
+            const fieldProps = {
+                id: field.id,
+                value: value,
+                onChange: (value) => handleFieldChange(field.id, value),
+                error: errors[field.id],
+                ...field.config
+            };
+
+            // Pour les champs image, ajouter les image_data depuis le field
+            if (field.type === 'image' && field.image_data) {
+                fieldProps.image_data = field.image_data;
+            }
+            
             return (
                 <PanelRow key={field.id}>
-                    <FieldComponent
-                        id={field.id}
-                        value={value}
-                        onChange={(value) => handleFieldChange(field.id, value)}
-                        error={errors[field.id]}
-                        {...field.config}
-                    />
+                    <FieldComponent {...fieldProps} />
                 </PanelRow>
             );
         });

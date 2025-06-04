@@ -64,6 +64,7 @@ class FieldsRegistry {
 		$this->register( 'select', '\PathOfSettings\Fields\SelectField' );
 		$this->register( 'checkbox', '\PathOfSettings\Fields\CheckboxField' );
 		$this->register( 'textarea', '\PathOfSettings\Fields\TextareaField' );
+		$this->register( 'image', '\PathOfSettings\Fields\ImageField' );
 	}
 
 	/**
